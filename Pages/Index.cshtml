@@ -1,0 +1,326 @@
+﻿@page
+@{}
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Discussions</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+<body>
+
+    <div>
+        
+        <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+            <a class="navbar-brand" href="#">Send your Query</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarText">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <button class="btn btn-primary rounded" data-toggle="modal" data-target="#addMessage">Send A Message</button>
+                    </li>
+
+                </ul>
+
+            </div>
+        </nav>
+
+
+        <div class="container" id="messages">
+
+
+        </div>
+
+    </div>
+
+
+
+
+
+
+
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.0.3.min.js"></script>
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery.templates/beta1/jquery.tmpl.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    <script>
+        var uri = 'api/Messages';
+
+
+        $(document).ready(function () {
+            // Gets all Messages records
+            $.getJSON(uri)
+                .done(function (data) {
+
+                    $("#messageTemplate").tmpl(data).appendTo("#messages");
+                    $('.toast').toast('show');
+                });
+
+
+            $('.toast').toast('show');
+
+        });
+
+        // print all messages
+
+        function getAllMessages() {
+
+            $.getJSON(uri)
+                .done(function (data) {
+
+                    $("#messages").text("");
+
+                    $("#messageTemplate").tmpl(data).appendTo("#messages");
+                    $('.toast').toast('show');
+                });
+
+        }
+
+        // add message function
+
+        function addMessage() {
+            var _text = $('#text').val();
+            var _sender = $('#sender').val();
+            var _time = $('#time').val();
+
+
+
+
+            var message = {
+                text: _text,
+                sender: _sender,
+                time: _time
+
+
+            };
+
+            $.ajax({
+                type: "POST",
+                url: uri,
+                data: JSON.stringify(message),
+                contentType: "application/json; charset=utf-8"
+            }).done(function (response) {
+                $("#result").html("Message has been sent");
+                getAllMessages();
+            }).fail(function (jqXHR, textStatus) {
+                $("#result").html("Send failed!");
+            });
+
+
+
+
+        }
+
+
+
+        // update content message function
+
+        function updateMessage() {
+            var _text = $('#_text').val();
+            var _sender = $('#_sender').val();
+            var _time = $('#_time').val();
+
+
+
+
+
+            var message = {
+                id: parseInt($('#_id').val()),
+                text: _text,
+                sender: _sender,
+                time: _time
+
+
+            };
+
+            $.ajax({
+                type: "PUT",
+                url: uri + "/" + $('#_id').val(),
+                data: JSON.stringify(message),
+                contentType: "application/json; charset=utf-8"
+            }).done(function (response) {
+                $("#resultUpdate").html("Message Updated");
+                getAllMessages();
+            }).fail(function (jqXHR, textStatus) {
+                $("#resultUpdate").html("Updates failed!");
+            });;
+
+
+
+
+        }
+
+        // delete a message
+
+        function remove(id) {
+
+
+            var yes = confirm("Delete this Message?");
+
+            if (yes) {
+                $.ajax({
+                    type: "DELETE",
+                    url: uri + "/" + id,
+
+                }).done(function (response) {
+
+                    getAllMessages();
+                });
+
+            }
+
+
+        }
+
+
+
+        
+
+        function getMessageForUpdate(id) {
+
+            $.ajax({
+                type: "GET",
+                url: uri + "/" + id,
+                contentType: "application/json"
+            }).done(function (response) {
+
+                $('#_id').val(response.id);
+                $('#_time').val(response.time);
+                $('#_sender').val(response.sender);
+                $('#_text').val(response.text);
+
+
+
+
+
+            });
+
+
+        }
+    </script>
+
+
+
+    <script id="messageTemplate" type="text/x-jquery-tmpl">
+
+
+        <div class="toast" data-autohide="false" style="width:in">
+            <div class="toast-header">
+
+                <strong class="mr-auto">${sender}</strong>
+                <small>${time}</small>
+
+                <button class="btn btn-outline-primary" onclick="getMessageForUpdate('${id}')" data-toggle="modal" data-target="#updateMessage">Update</button>
+                <a href="#" class="btn btn-outline-danger" onclick="remove('${id}')">Delete</a>
+            </div>
+            <div class="toast-body">
+                ${text}
+            </div>
+        </div>
+
+    </script>
+
+
+
+    <div class="modal" tabindex="-1" role="dialog" id="addMessage">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send a message</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="name">Text </label>
+                            <input type="text" class="form-control" id="text" aria-describedby="emailHelp" placeholder="Text">
+
+                        </div>
+                        <div class="form-group">
+                            <label for="model">Sender</label>
+                            <input type="text" class="form-control" id="sender" aria-describedby="emailHelp" placeholder="Sender">
+
+                        </div>
+                        <div class="form-group">
+                            <label for="model">Time</label>
+                            <input type="datetime-local" class="form-control" id="time" aria-describedby="emailHelp" placeholder="Time">
+
+                        </div>
+
+
+                        <div class="form-group" id="result">
+
+
+                        </div>
+                        <button type="button" onclick="addMessage()" class="btn btn-primary">Send Message</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Discard</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <div class="modal" tabindex="-1" role="dialog" id="updateMessage">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Message</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+
+                        <div class="form-group">
+
+                            <input type="hidden" class="form-control" id="_id" aria-describedby="emailHelp">
+
+                        </div>
+                        <div class="form-group">
+                            <label for="name">Text </label>
+                            <input type="text" class="form-control" id="_text" aria-describedby="emailHelp" placeholder="Text">
+
+                        </div>
+                        <div class="form-group">
+
+                            <input type="hidden" class="form-control" id="_sender" aria-describedby="emailHelp" placeholder="Sender">
+
+                        </div>
+                        <div class="form-group">
+
+                            <input type="hidden" class="form-control" id="_time" aria-describedby="emailHelp" placeholder="Time">
+
+                        </div>
+
+
+                        <div class="form-group" id="resultUpdate">
+
+
+                        </div>
+                        <button type="button" onclick="updateMessage()" class="btn btn-primary">Update Message</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Discard</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
